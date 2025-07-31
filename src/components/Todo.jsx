@@ -1,8 +1,32 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+// Move usePrevious outside the component
+function usePrevious(value) {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
 
 function Todo(props) {
   const [isEditing, setEditing] = useState(false);
   const [newName, setNewName] = useState("");
+  const editFieldRef = useRef(null);
+  const editButtonRef = useRef(null);
+
+  const wasEditing = usePrevious(isEditing);
+
+  // Single useEffect for focus management
+  useEffect(() => {
+    if (!wasEditing && isEditing) {
+      // Just switched to editing mode
+      editFieldRef.current?.focus();
+    } else if (wasEditing && !isEditing) {
+      // Just switched from editing to view mode
+      editButtonRef.current?.focus();
+    }
+  }, [wasEditing, isEditing]);
 
   function handleChange(e) {
     setNewName(e.target.value);
@@ -10,9 +34,22 @@ function Todo(props) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    props.editTask(props.id, newName);
+    if (newName.trim()) {
+      // Only save if there's actual content
+      props.editTask(props.id, newName.trim());
+    }
     setNewName("");
     setEditing(false);
+  }
+
+  function handleCancel() {
+    setNewName("");
+    setEditing(false);
+  }
+
+  function handleEdit() {
+    setNewName(props.name); // Initialize with current name
+    setEditing(true);
   }
 
   const editingTemplate = (
@@ -27,24 +64,26 @@ function Todo(props) {
           type="text"
           value={newName}
           onChange={handleChange}
+          ref={editFieldRef}
         />
       </div>
       <div className="btn-group">
         <button
           type="button"
           className="btn todo-cancel"
-          onClick={() => setEditing(false)}
+          onClick={handleCancel}
         >
           Cancel
           <span className="visually-hidden">renaming {props.name}</span>
         </button>
-
-        <button type="button" className="btn" onClick={() => setEditing(true)}>
-          Edit <span className="visually-hidden">{props.name}</span>
+        <button type="submit" className="btn btn__primary">
+          Save
+          <span className="visually-hidden">new name for {props.name}</span>
         </button>
       </div>
     </form>
   );
+
   const viewTemplate = (
     <div className="stack-small">
       <div className="c-cb">
@@ -59,7 +98,12 @@ function Todo(props) {
         </label>
       </div>
       <div className="btn-group">
-        <button type="button" className="btn" onClick={() => setEditing(true)}>
+        <button
+          type="button"
+          className="btn"
+          onClick={handleEdit}
+          ref={editButtonRef}
+        >
           Edit <span className="visually-hidden">{props.name}</span>
         </button>
         <button
