@@ -1,11 +1,21 @@
-import React, { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { nanoid } from "nanoid";
 import "./App.css";
 import Todo from "./components/Todo";
 import Form from "./components/Form";
 import FilterButton from "./components/FilterButton";
 
+function usePrevious(value) {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
+
 function App() {
+  const listHeadingRef = useRef(null);
+
   const DATA = [
     { id: "todo-0", name: "Eat", completed: true },
     { id: "todo-1", name: "Sleep", completed: false },
@@ -13,6 +23,17 @@ function App() {
   ];
   const [tasks, setTasks] = useState(DATA);
   const [filter, setFilter] = useState("All");
+
+  const prevTaskLength = usePrevious(tasks.length);
+
+  // Focus management for task deletion
+  useEffect(() => {
+    const wasHigherTaskCount =
+      prevTaskLength > tasks.length && prevTaskLength != null;
+    if (wasHigherTaskCount) {
+      listHeadingRef.current?.focus();
+    }
+  }, [tasks.length, prevTaskLength]);
 
   const FILTER_MAP = {
     All: () => true,
@@ -89,7 +110,10 @@ function App() {
 
         <div className="filters btn-group stack-exception">{filterList}</div>
 
-        <h2 id="list-heading">{headingText}</h2>
+        <h2 id="list-heading" tabIndex="-1" ref={listHeadingRef}>
+          {headingText}
+        </h2>
+
         <ul
           role="list"
           className="todo-list stack-large stack-exception"
