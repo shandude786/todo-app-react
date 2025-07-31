@@ -1,8 +1,10 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+
 export default defineConfig({
   plugins: [react()],
-  base: '/todo-app-react',  // <- Set to /repo-name/
-})
+  base: isGitHubPages ? '/todo-app-react/' : '/',
+});
